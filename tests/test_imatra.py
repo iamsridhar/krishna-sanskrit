@@ -36,6 +36,24 @@ def test_i_matra_reaches_final_consonant(shaped, krishna):
     assert not bad, f'{len(bad)} clusters, {sum(e[1] for e in bad):,} tokens off by >{MAX_ERROR}: {bad[:8]}'
 
 
+def test_i_matra_generalises_to_attested_4_consonant_clusters(clusters, krishna):
+    """Clusters outside the corpus, built from attested consonant pairs, also reach."""
+    import random
+    from krishnatools.imatra import attested_chains
+    random.seed(3)
+    sample = random.sample(attested_chains(clusters, 4), 2000)
+    cache, ok, total = {}, 0, 0
+    for c in sample:
+        c += '\u093F'
+        measured, shift = required_reach(krishna, c, cache), _shift(krishna.shape(c))
+        if not measured or shift is None:
+            continue
+        target = measured[1] if measured[1] >= (MIN_LEVEL - 0.5) * STEP else 0
+        total += 1
+        ok += abs(shift - target) <= MAX_ERROR
+    assert total > 1500 and ok / total >= 0.95, f'{ok}/{total}'
+
+
 def test_single_consonant_i_matra_unchanged(shaped, upstream, krishna):
     changed = [c for c, _, u, a in shaped
                if '\u093F' in c and '\u094D' not in c and upstream.signature(u) != krishna.signature(a)]

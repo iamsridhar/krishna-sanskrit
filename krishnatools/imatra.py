@@ -57,11 +57,35 @@ def required_reach(shaper, cluster, cache=None):
     return run, sum(g.x_advance for g in run) - cache[final]
 
 
+def attested_pairs(corpus):
+    """Consonant pairs that occur adjacent inside a conjunct somewhere in the corpus."""
+    from .corpus import conjuncts
+    pairs = set()
+    for c in conjuncts(corpus):
+        cs = re.findall('[\u0915-\u0939]', c)
+        pairs |= set(zip(cs, cs[1:]))
+    return pairs
+
+
+def attested_chains(corpus, length):
+    """Every `length`-consonant cluster whose adjacent pairs are all attested."""
+    nxt = {}
+    for a, b in attested_pairs(corpus):
+        nxt.setdefault(a, set()).add(b)
+    chains = [[a] for a in sorted(nxt)]
+    for _ in range(length - 1):
+        chains = [c + [b] for c in chains for b in sorted(nxt.get(c[-1], ()))]
+    return ['\u094D'.join(c) for c in chains]
+
+
 def candidate_clusters(corpus):
-    """Corpus conjuncts with an i-matra, plus every generated 2- and 3-consonant cluster."""
+    """Clusters to learn i-matra reach from: corpus conjuncts with an i-matra, every
+    generated 2- and 3-consonant cluster, and every 4-consonant cluster built from
+    consonant pairs attested in the corpus (~37k)."""
     out = [c for c in corpus if '\u093F' in c and '\u094D' in c]
     for a in CONSONANTS:
         for b in CONSONANTS:
             out.append(f'{a}\u094D{b}\u093F')
             out.extend(f'{a}\u094D{b}\u094D{c}\u093F' for c in CONSONANTS)
+    out.extend(f'{c}\u093F' for c in attested_chains(corpus, 4))
     return out

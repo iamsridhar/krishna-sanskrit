@@ -73,41 +73,52 @@ def _stretched_glyph(glyf, name, shift):
     return g
 
 
-def _levels_and_rules(font):
-    """Learn (lookahead coverages -> level) rules from shaping candidate clusters."""
+def _contexts(font):
+    """Learn lookahead contexts -> i-matra level from shaping candidate clusters.
+
+    Every glyph seen before the last glyph of a run gets a width class (its advance,
+    in STEPs); every glyph seen last gets a class for how much wider it is than its
+    final consonant. Rules are then made per class combination rather than per glyph
+    sequence, so they cover unseen clusters (e.g. 4-consonant ones) built from glyphs
+    whose classes are known: every 1- and 2-glyph combination of classes, and the 3+
+    glyph class combinations actually observed.
+    """
     shaper = Shaper(ttfont=font)
     hmtx = font['hmtx']
-    cache, ext_samples, runs = {}, defaultdict(list), {}
+    cache, ext_samples, runs = {}, defaultdict(list), set()
     for cluster in candidate_clusters(load_clusters()):
         measured = required_reach(shaper, cluster, cache)
         if not measured:
             continue
         run, delta = measured
         names = tuple(g.name for g in run)
-        last = names[-1]
-        ext_samples[last].append(sum(g.x_advance for g in run[-1:]) - (sum(g.x_advance for g in run) - delta))
-        runs[names] = delta
-    ext = {g: median(v) for g, v in ext_samples.items()}
+        ext_samples[names[-1]].append(run[-1].x_advance - (sum(g.x_advance for g in run) - delta))
+        runs.add(names)
 
     def bin_(units):
         return round(units / STEP)
 
-    rules = defaultdict(lambda: defaultdict(set))  # signature -> position -> glyphs
-    levels = {}
-    for names, _ in runs.items():
-        prefix_bins = tuple(bin_(hmtx[g][0]) for g in names[:-1])
-        last_bin = bin_(ext[names[-1]])
-        level = min(sum(prefix_bins) + last_bin, MAX_LEVEL)
-        signature = prefix_bins + (last_bin,)
-        levels[signature] = level
-        for pos, g in enumerate(names):
-            rules[signature][pos].add(g)
-    return rules, levels
+    last_class = {g: bin_(median(v)) for g, v in ext_samples.items()}
+    prefix_class = {g: bin_(hmtx[g][0]) for names in runs for g in names[:-1]}
+    by_prefix, by_last = defaultdict(set), defaultdict(set)
+    for g, c in prefix_class.items():
+        by_prefix[c].add(g)
+    for g, c in last_class.items():
+        by_last[c].add(g)
+
+    signatures = {(e,) for e in by_last} | {(a, e) for a in by_prefix for e in by_last}
+    signatures |= {tuple(prefix_class[g] for g in names[:-1]) + (last_class[names[-1]],)
+                   for names in runs if len(names) > 2}
+    contexts = []
+    for sig in signatures:
+        sets = [sorted(by_prefix[c]) for c in sig[:-1]] + [sorted(by_last[sig[-1]])]
+        contexts.append((sets, min(sum(sig), MAX_LEVEL)))
+    return contexts
 
 
 def apply(font):
-    rules, levels = _levels_and_rules(font)
-    used = sorted({lv for lv in levels.values() if lv >= MIN_LEVEL})
+    learned = _contexts(font)
+    used = sorted({lv for _, lv in learned if lv >= MIN_LEVEL})
 
     # 1. variant glyphs, appended to the glyph order so existing coverages stay sorted
     glyf = font['glyf']
@@ -130,12 +141,11 @@ def apply(font):
         subst_index[level] = append_lookup(gsub, lk)
 
     contexts = []  # (lookahead glyph sets, level)
-    for signature, level in levels.items():
+    for sets, level in learned:
         # A matching subtable ends the lookup, so short multi-glyph runs still need an
         # (action-less) rule; otherwise a shorter rule could match their first glyph.
-        if level < MIN_LEVEL and len(signature) == 1:
+        if level < MIN_LEVEL and len(sets) == 1:
             continue
-        sets = [sorted(rules[signature][p]) for p in range(len(signature))]
         contexts.append((sets, level))
         for j in range(len(sets) - 1):
             contexts.append((sets[:j + 1] + [[ZWJ_GLYPH]] + sets[j + 1:], level))
