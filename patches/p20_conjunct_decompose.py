@@ -47,6 +47,7 @@ DECOMPOSE = {
     'izhitsadoublegravecyrl': ('ब्ज', [HALF_BA, JA]),
     'lretroflexhook': ('क्त्र', [HALF_KA, TRA]),
     'hturned': ('क्च', [HALF_KA, CA]),
+    'Yicyrl': ('न्त्र्य', [HALF_NA, 'glyph930']),  # glyph930 = upstream त्र्य
     'raisedcolonmod': ('च्छ्र', [HALF_CA, CHRA]),
     'palatalizedhookbelowcomb': ('ञ्छ्र', [HALF_NYA, CHRA]),
     # Below-base ra left over when no rakar ligature applies (र्र्ष, भ्र्रा): show र +
