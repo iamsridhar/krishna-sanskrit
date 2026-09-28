@@ -36,7 +36,10 @@ DECOMPOSE = {
     # virama instead of a detached hook, as Shobhika does.
     'glyph89': ('र्र', ['uni0930', 'uni094D']),
 }
-FEATURE = 'pres'
+# psts is the last presentation feature. HarfBuzz runs all presentation lookups in one
+# pass in lookup order, but CoreText runs them feature by feature, so registering here
+# keeps this lookup after upstream's pres/psts ligatures in both engines.
+FEATURE = 'psts'
 
 _AFFECTS = re.compile('|'.join(sorted({seq for seq, _ in DECOMPOSE.values()}, key=len, reverse=True)))
 _EXPLICIT_VIRAMA = re.compile('र्र')

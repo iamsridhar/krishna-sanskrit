@@ -30,6 +30,12 @@ ChangeLog
   the corpus plus all generated 2- and 3-consonant clusters. 311 corpus clusters
   (16,576 tokens) change; every conjunct's hook lands within 90 units of its target.
   The i-matra before a single consonant is unchanged. Variant glyphs are unhinted.
+- p20/p30 lookups moved to the psts feature so CoreText (which applies features one
+  at a time) runs them after upstream's ligatures, as HarfBuzz does; the i-matra
+  rules gained explicit ZWJ variants because CoreText does not skip ZWJ in contexts.
+  CoreText and HarfBuzz now agree on every corpus cluster Krishna changes. Checked in
+  XeLaTeX (FakeBold=0.5, Scale=1.1): all fixes render; digit + anudatta also renders
+  correctly without the site's \anudattadigit workaround.
 
 Acknowledgements
 ----------------

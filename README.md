@@ -42,6 +42,29 @@ Sūktāni. Regenerate it with `tools/export_corpus.py` after the site build.
   and no anudātta collisions outside a short, documented list of known residuals.
 - `test_imatra.py`: every conjunct's i-mātrā hook lands within 1.5 steps (180 units) of
   its final consonant, and the i-mātrā before a single consonant is unchanged.
+- `test_engines.py` (macOS, opt-in with `KRISHNA_ENGINES=1`): CoreText (Safari, macOS/iOS
+  apps) shapes every corpus cluster exactly like HarfBuzz, apart from differences upstream
+  already has.
+
+## Reviewing on the real site
+
+```bash
+venv/bin/python tools/preview_site.py      # needs a built ~/code/sriiyerNew
+```
+
+Serves the site on two ports without modifying it: `:8800` as-is, `:8801` with every
+Shobhika/Sanskrit2020 Devanāgarī font stack switched to Krishna Sanskrit (and the Shobhika
+faux-weight removed). Compare e.g. `/veda/samhita/Kanda_1_Prashna_1.html` on both.
+`tools/compare_engines.py` prints the CoreText vs HarfBuzz report in detail.
+
+## Renderer notes
+
+- HarfBuzz (Chrome, Firefox, Android, XeTeX/LuaTeX) and CoreText (Safari, macOS/iOS) are
+  verified. DirectWrite (Windows/Word) is not yet tested.
+- New lookups are registered in `psts`, the last presentation feature: HarfBuzz applies
+  all presentation lookups in lookup order, but CoreText applies them feature by feature.
+- CoreText does not skip ZWJ when matching contexts, so the i-mātrā rules include
+  explicit ZWJ variants.
 
 ## Adding a patch
 

@@ -38,8 +38,14 @@ MIN_LEVEL = 2
 MAX_LEVEL = 24
 SPLIT_X = 530
 MAIN_CONTOURS = 2  # the i-matra itself; later contours (bindu, reph) move rigidly
-FEATURE = 'pres'
+# Last presentation feature: CoreText applies features one at a time, so this keeps the
+# lookup after upstream's psts ligature that merges the i-matra with anusvara/reph.
+FEATURE = 'psts'
 USE_MARK_FILTERING_SET = 0x0010
+# ZWJ is this glyph while GSUB runs (both engines only show it as `space` afterwards).
+# HarfBuzz skips it when matching contexts; CoreText does not, so multi-glyph rules
+# get extra copies with it in each possible position.
+ZWJ_GLYPH = 'uni200D'
 
 
 def variant_name(base, level):
@@ -196,18 +202,24 @@ def apply(font):
         lk.SubTableCount = 1
         subst_index[level] = _append_lookup(gsub, lk)
 
-    subtables = []
-    for signature in sorted(levels, key=lambda s: -len(s)):  # longest context first
-        level = levels[signature]
+    contexts = []  # (lookahead glyph sets, level)
+    for signature, level in levels.items():
         # A matching subtable ends the lookup, so short multi-glyph runs still need an
         # (action-less) rule; otherwise a shorter rule could match their first glyph.
         if level < MIN_LEVEL and len(signature) == 1:
             continue
+        sets = [sorted(rules[signature][p]) for p in range(len(signature))]
+        contexts.append((sets, level))
+        for j in range(len(sets) - 1):
+            contexts.append((sets[:j + 1] + [[ZWJ_GLYPH]] + sets[j + 1:], level))
+
+    subtables = []
+    for sets, level in sorted(contexts, key=lambda c: -len(c[0])):  # longest context first
         st = ot.ChainContextSubst()
         st.Format = 3
         st.BacktrackCoverage = []
         st.InputCoverage = [buildCoverage(I_GLYPHS, gmap)]
-        st.LookAheadCoverage = [buildCoverage(sorted(rules[signature][p]), gmap) for p in range(len(signature))]
+        st.LookAheadCoverage = [buildCoverage(glyphs, gmap) for glyphs in sets]
         st.BacktrackGlyphCount, st.InputGlyphCount = 0, 1
         st.LookAheadGlyphCount = len(st.LookAheadCoverage)
         st.SubstLookupRecord = []
