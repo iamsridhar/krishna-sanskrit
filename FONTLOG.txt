@@ -1,0 +1,28 @@
+FONTLOG for Krishna Sanskrit
+==========================
+
+Basic font information
+----------------------
+Krishna Sanskrit is a Devanagari font for Vedic Sanskrit, derived from Sanskrit2020
+(advaita56, Version 1.30, July 27 2022), which is itself based on Sanskrit 2003 by
+Omkarananda Ashram Himalayas. Licensed under the SIL Open Font License 1.1.
+
+ChangeLog
+---------
+0.100 (unreleased)
+- p00: Renamed from Sanskrit2020 to Krishna Sanskrit. Upstream copyright retained.
+- p10: Anudatta (U+0952) now hangs beneath the u, uu, vocalic r/rr, vocalic l/ll
+  vowel signs and virama instead of overlapping them (about 44,800 occurrences
+  in the Taittiriya corpus). Implemented as a new mark-to-mark lookup with a GDEF
+  mark filtering set, so reph, anusvara and svarita between the two are skipped.
+
+Acknowledgements
+----------------
+N: Omkarananda Ashram Himalayas
+D: Sanskrit 2003 and the Devanagari design this font is based on
+
+N: advaita56
+D: Sanskrit2020 (Vedic Extensions, Devanagari Extended, updated positioning)
+
+N: (URW)++ Design & Development
+D: URW Palladio Latin glyphs
