@@ -1,4 +1,6 @@
 """HarfBuzz shaping plus ink-geometry helpers used by tests and proofs."""
+import io
+import re
 from dataclasses import dataclass
 from functools import lru_cache
 
@@ -24,10 +26,18 @@ class Glyph:
 
 
 class Shaper:
-    def __init__(self, path):
-        self.path = str(path)
-        self.hb_font = hb.Font(hb.Face(hb.Blob.from_file_path(self.path)))
-        self.tt = TTFont(self.path)
+    def __init__(self, path=None, ttfont=None):
+        if ttfont is not None:
+            buf = io.BytesIO()
+            ttfont.save(buf)
+            data = buf.getvalue()
+            self.path = None
+            self.hb_font = hb.Font(hb.Face(hb.Blob(data)))
+            self.tt = TTFont(io.BytesIO(data))
+        else:
+            self.path = str(path)
+            self.hb_font = hb.Font(hb.Face(hb.Blob.from_file_path(self.path)))
+            self.tt = TTFont(self.path)
         self.glyph_set = self.tt.getGlyphSet()
         self.order = self.tt.getGlyphOrder()
         cmap = self.tt.getBestCmap()
@@ -80,8 +90,11 @@ class Shaper:
 
 
 def has_internal_virama(text):
-    """Virama followed by another consonant, i.e. one that should join a conjunct."""
-    return any(ch == '\u094D' and '\u0915' <= nxt <= '\u0939' for ch, nxt in zip(text, text[1:]))
+    """Virama (optionally + ZWJ) followed by another consonant, i.e. part of a conjunct."""
+    return bool(_INTERNAL_VIRAMA.search(text))
+
+
+_INTERNAL_VIRAMA = re.compile('\u094D\u200D?[\u0915-\u0939]')
 
 
 def anudatta_mark_collisions(shaper, glyphs, min_clearance=MIN_CLEARANCE):

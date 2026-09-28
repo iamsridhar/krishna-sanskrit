@@ -15,6 +15,21 @@ ChangeLog
   vowel signs and virama instead of overlapping them (about 44,800 occurrences
   in the Taittiriya corpus). Implemented as a new mark-to-mark lookup with a GDEF
   mark filtering set, so reph, anusvara and svarita between the two are skipped.
+- p20: Cramped fused conjuncts are split into upstream component glyphs, following
+  Shobhika's structure: ddhya, dbhya, dvya, ddya (and ndddhya, ndvya, bddhya,
+  gddhya, rddhya) as stack + full ya; bja, ktra, cchra, nycchra as half form +
+  letter; a leftover below-base ra (rrsha) as ra + virama. Implemented as a final
+  multiple-substitution lookup, so marks use the components' existing anchors.
+  118 corpus clusters change. Not yet addressed: ddhna (kept as upstream's d + dhna
+  by choice).
+- p30: The i-matra hook now reaches the final consonant of a conjunct. 23 longer
+  variants (120-unit steps) of the i-matra and its anusvara/candrabindu/reph-merged
+  forms are made by stretching the flat top of the upstream arc; anusvara,
+  candrabindu and reph move with the tip. A chained contextual lookup picks the
+  length from the width of the glyphs in front of the final consonant, learned from
+  the corpus plus all generated 2- and 3-consonant clusters. 311 corpus clusters
+  (16,576 tokens) change; every conjunct's hook lands within 90 units of its target.
+  The i-matra before a single consonant is unchanged. Variant glyphs are unhinted.
 
 Acknowledgements
 ----------------

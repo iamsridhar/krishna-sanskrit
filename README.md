@@ -16,6 +16,8 @@ from `patches/` in order:
 |---|---|
 | `p00_rename` | Renames to Krishna Sanskrit, keeps upstream copyright, drops the stale DSIG. Renders identically to upstream. |
 | `p10_anudatta_below_vowel` | Hangs anudātta (U+0952) under u/ū/ṛ/ṝ/ḷ/ḹ vowel signs and virama instead of overlapping them. |
+| `p20_conjunct_decompose` | Splits cramped fused conjuncts into upstream component glyphs, following Shobhika's structure: द्ध्य द्भ्य द्व्य द्द्य → stack + य; ब्ज क्त्र च्छ्र ञ्छ्र → half form + letter; leftover below-ra (र्र्ष) → र्. |
+| `p30_long_i_matra` | Adds 23 longer i-mātrā (ि) hooks, made by stretching the flat top of the upstream arc (also for the ि+anusvāra/candrabindu/reph forms), and picks one per conjunct so the hook lands on the final consonant as it does on a single consonant. Single consonants keep the upstream ि. |
 
 Each patch declares, via `affects(cluster)`, which text clusters it is allowed to change.
 The test suite fails if anything else changes.
@@ -38,6 +40,8 @@ Sūktāni. Regenerate it with `tools/export_corpus.py` after the site build.
 - `test_scope.py`: every rendering change is claimed by some patch.
 - `test_quality.py`: no new missing glyphs or dotted circles, no conjunct regressions,
   and no anudātta collisions outside a short, documented list of known residuals.
+- `test_imatra.py`: every conjunct's i-mātrā hook lands within 1.5 steps (180 units) of
+  its final consonant, and the i-mātrā before a single consonant is unchanged.
 
 ## Adding a patch
 
