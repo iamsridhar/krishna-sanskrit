@@ -28,6 +28,7 @@ from fontTools.ttLib.tables import ttProgram
 
 from krishnatools.corpus import load_clusters
 from krishnatools.imatra import I_GLYPHS, candidate_clusters, required_reach
+from krishnatools.otl import add_mark_filtering_set, append_glyph, append_lookup, clone_into_gpos
 from krishnatools.shaping import Shaper, has_internal_virama
 
 ID = 'p30'
@@ -37,7 +38,6 @@ STEP = 120
 MIN_LEVEL = 2
 MAX_LEVEL = 24
 SPLIT_X = 530
-MAIN_CONTOURS = 2  # the i-matra itself; later contours (bindu, reph) move rigidly
 # Last presentation feature: CoreText applies features one at a time, so this keeps the
 # lookup after upstream's psts ligature that merges the i-matra with anusvara/reph.
 FEATURE = 'psts'
@@ -57,16 +57,16 @@ def _stretch_x(x, shift):
 
 
 def _stretched_glyph(glyf, name, shift):
+    """Split-stretch: points right of SPLIT_X move right, the rest stay. Only the i-matra
+    arc crosses SPLIT_X; stem, bindu, candrabindu and reph contours lie wholly on one side,
+    so they stay put or move rigidly with the tip."""
     g = copy.deepcopy(glyf[name])
     if g.isComposite():
         raise ValueError(f'{name} is composite')
     coords = g.coordinates
-    start = 0
-    for contour, end in enumerate(g.endPtsOfContours):
-        for i in range(start, end + 1):
-            x, y = coords[i]
-            coords[i] = (x + shift if contour >= MAIN_CONTOURS else _stretch_x(x, shift), y)
-        start = end + 1
+    for i in range(len(coords)):
+        x, y = coords[i]
+        coords[i] = (_stretch_x(x, shift), y)
     g.program = ttProgram.Program()  # upstream hints don't fit the stretched outline
     g.program.fromBytecode(b'')
     g.recalcBounds(glyf)
@@ -105,91 +105,18 @@ def _levels_and_rules(font):
     return rules, levels
 
 
-def _add_variant_to_gpos(font, base, variant, shift):
-    """Put `variant` everywhere `base` is in GPOS, with anchors shifted like the outline."""
-    def anchor(a):
-        if a is None:
-            return None
-        b = copy.deepcopy(a)
-        b.XCoordinate = _stretch_x(b.XCoordinate, shift)
-        return b
-
-    for lookup in font['GPOS'].table.LookupList.Lookup:
-        for st in lookup.SubTable:
-            t = lookup.LookupType
-            if t == 8 and st.Format == 3:
-                for cov in st.BacktrackCoverage + st.InputCoverage + st.LookAheadCoverage:
-                    if base in cov.glyphs:
-                        cov.glyphs.append(variant)
-            elif t == 4:
-                if base in st.BaseCoverage.glyphs:
-                    rec = st.BaseArray.BaseRecord[st.BaseCoverage.glyphs.index(base)]
-                    new = ot.BaseRecord()
-                    new.BaseAnchor = [anchor(a) for a in rec.BaseAnchor]
-                    st.BaseCoverage.glyphs.append(variant)
-                    st.BaseArray.BaseRecord.append(new)
-                    st.BaseArray.BaseCount = len(st.BaseArray.BaseRecord)
-                if base in st.MarkCoverage.glyphs:
-                    raise NotImplementedError(f'{base} as mark in MarkBasePos')
-            elif t == 6:
-                if base in st.Mark2Coverage.glyphs:
-                    rec = st.Mark2Array.Mark2Record[st.Mark2Coverage.glyphs.index(base)]
-                    new = ot.Mark2Record()
-                    new.Mark2Anchor = [anchor(a) for a in rec.Mark2Anchor]
-                    st.Mark2Coverage.glyphs.append(variant)
-                    st.Mark2Array.Mark2Record.append(new)
-                    st.Mark2Array.MarkCount = len(st.Mark2Array.Mark2Record)
-                if base in st.Mark1Coverage.glyphs:
-                    raise NotImplementedError(f'{base} as mark1 in MarkMarkPos')
-            else:
-                glyphs = set()
-                for attr in ('Coverage', 'MarkCoverage', 'BaseCoverage', 'LigatureCoverage'):
-                    cov = getattr(st, attr, None)
-                    if cov:
-                        glyphs |= set(cov.glyphs)
-                if base in glyphs:
-                    raise NotImplementedError(f'{base} in GPOS lookup type {t} format {st.Format}')
-
-
-def _append_lookup(table, lookup):
-    table.LookupList.Lookup.append(lookup)
-    table.LookupList.LookupCount = len(table.LookupList.Lookup)
-    return table.LookupList.LookupCount - 1
-
-
-def _mark_filtering_set(font, glyphs):
-    gdef = font['GDEF'].table
-    if gdef.Version < 0x00010002 or getattr(gdef, 'MarkGlyphSetsDef', None) is None:
-        gdef.Version = 0x00010002
-        gdef.MarkGlyphSetsDef = ot.MarkGlyphSetsDef()
-        gdef.MarkGlyphSetsDef.MarkSetTableFormat = 1
-        gdef.MarkGlyphSetsDef.Coverage = []
-    sets = gdef.MarkGlyphSetsDef
-    sets.Coverage.append(buildCoverage(glyphs, font.getReverseGlyphMap()))
-    sets.MarkSetCount = len(sets.Coverage)
-    return sets.MarkSetCount - 1
-
-
 def apply(font):
     rules, levels = _levels_and_rules(font)
     used = sorted({lv for lv in levels.values() if lv >= MIN_LEVEL})
 
     # 1. variant glyphs, appended to the glyph order so existing coverages stay sorted
-    glyf, hmtx = font['glyf'], font['hmtx']
-    classes = font['GDEF'].table.GlyphClassDef.classDefs
-    order = list(font.getGlyphOrder())
+    glyf = font['glyf']
     for level in used:
         for base in I_GLYPHS:
             name = variant_name(base, level)
-            glyf.glyphs[name] = _stretched_glyph(glyf, base, level * STEP)
-            hmtx[name] = hmtx[base]
-            classes[name] = classes[base]
-            order.append(name)
-    font.setGlyphOrder(order)
-    glyf.glyphOrder = order
-    for level in used:
-        for base in I_GLYPHS:
-            _add_variant_to_gpos(font, base, variant_name(base, level), level * STEP)
+            shift = level * STEP
+            append_glyph(font, name, _stretched_glyph(glyf, base, shift), font['hmtx'][base][0], like=base)
+            clone_into_gpos(font, base, name, map_x=lambda x, s=shift: _stretch_x(x, s))
 
     # 2. one single-substitution lookup per length, referenced from a chaining lookup
     gsub = font['GSUB'].table
@@ -200,7 +127,7 @@ def apply(font):
         lk.LookupType, lk.LookupFlag = 1, 0
         lk.SubTable = [buildSingleSubstSubtable({b: variant_name(b, level) for b in I_GLYPHS})]
         lk.SubTableCount = 1
-        subst_index[level] = _append_lookup(gsub, lk)
+        subst_index[level] = append_lookup(gsub, lk)
 
     contexts = []  # (lookahead glyph sets, level)
     for signature, level in levels.items():
@@ -233,18 +160,10 @@ def apply(font):
     chain = ot.Lookup()
     chain.LookupType = 6
     chain.LookupFlag = USE_MARK_FILTERING_SET
-    chain.MarkFilteringSet = _mark_filtering_set(font, I_GLYPHS)
+    chain.MarkFilteringSet = add_mark_filtering_set(font, I_GLYPHS)
     chain.SubTable = subtables
     chain.SubTableCount = len(subtables)
-    index = _append_lookup(gsub, chain)
-    registered = 0
-    for fr in gsub.FeatureList.FeatureRecord:
-        if fr.FeatureTag == FEATURE:
-            fr.Feature.LookupListIndex.append(index)
-            fr.Feature.LookupCount = len(fr.Feature.LookupListIndex)
-            registered += 1
-    if not registered:
-        raise ValueError(f'No {FEATURE} feature for the i-matra lookup')
+    append_lookup(gsub, chain, FEATURE)
 
 
 def affects(cluster):

@@ -14,6 +14,8 @@ from fontTools.otlLib.builder import buildAnchor, buildCoverage
 from fontTools.pens.boundsPen import BoundsPen
 from fontTools.ttLib.tables import otTables as ot
 
+from krishnatools.otl import add_mark_filtering_set
+
 ID = 'p10'
 SUMMARY = 'Stack anudatta (U+0952) beneath u/uu/r/rr/l/ll vowel signs and virama instead of overlapping them.'
 
@@ -62,21 +64,6 @@ def build_subtable(font):
         st.Mark2Array.Mark2Record.append(r)
     st.Mark2Array.MarkCount = len(mark2)
     return st
-
-
-def add_mark_filtering_set(font, glyphs):
-    """Append a GDEF mark glyph set (upgrading GDEF to 1.2) and return its index."""
-    gdef = font['GDEF'].table
-    if gdef.Version < 0x00010002:
-        gdef.Version = 0x00010002
-    if getattr(gdef, 'MarkGlyphSetsDef', None) is None:
-        gdef.MarkGlyphSetsDef = ot.MarkGlyphSetsDef()
-        gdef.MarkGlyphSetsDef.MarkSetTableFormat = 1
-        gdef.MarkGlyphSetsDef.Coverage = []
-    sets = gdef.MarkGlyphSetsDef
-    sets.Coverage.append(buildCoverage(glyphs, font.getReverseGlyphMap()))
-    sets.MarkSetCount = len(sets.Coverage)
-    return sets.MarkSetCount - 1
 
 
 def apply(font):

@@ -40,3 +40,26 @@ def test_single_consonant_i_matra_unchanged(shaped, upstream, krishna):
     changed = [c for c, _, u, a in shaped
                if '\u093F' in c and '\u094D' not in c and upstream.signature(u) != krishna.signature(a)]
     assert not changed, changed[:10]
+
+
+def test_variants_keep_stem_and_only_stretch_the_arc(krishna):
+    """Left of SPLIT_X every variant is identical to its base glyph; right of it every
+    point is shifted by exactly the variant's length, and no contour other than the arc
+    crosses the split."""
+    from patches.p30_long_i_matra import SPLIT_X
+    glyf = krishna.tt['glyf']
+    for name in krishna.order:
+        base, _, suffix = name.partition('.l')
+        if base not in I_GLYPHS or not suffix:
+            continue
+        shift = int(suffix) * STEP
+        src, var = glyf[base].coordinates, glyf[name].coordinates
+        assert glyf[base].endPtsOfContours == glyf[name].endPtsOfContours, name
+        for (x0, y0), (x1, y1) in zip(src, var):
+            assert y1 == y0 and x1 == (x0 + shift if x0 > SPLIT_X else x0), (name, x0, y0, x1)
+        start, crossing = 0, 0
+        for end in glyf[base].endPtsOfContours:
+            xs = [src[i][0] for i in range(start, end + 1)]
+            crossing += min(xs) <= SPLIT_X < max(xs)
+            start = end + 1
+        assert crossing == 1, f'{base}: {crossing} contours cross SPLIT_X'
