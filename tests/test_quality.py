@@ -1,5 +1,6 @@
 """Quality gates over the whole corpus. Krishna must never be worse than upstream."""
 from krishnatools.shaping import anudatta_mark_collisions
+from patches import PATCHES
 
 
 def test_no_new_missing_glyphs_or_dotted_circles(shaped, upstream, krishna):
@@ -12,8 +13,10 @@ def test_no_new_missing_glyphs_or_dotted_circles(shaped, upstream, krishna):
 
 
 def test_conjunct_formation_not_worse_than_upstream(shaped, upstream, krishna):
+    intentional = [p.intentional_virama for p in PATCHES if hasattr(p, 'intentional_virama')]
     regressions = [c for c, _, u, a in shaped
-                   if 'unformed' in krishna.issues(c, a) and 'unformed' not in upstream.issues(c, u)]
+                   if 'unformed' in krishna.issues(c, a) and 'unformed' not in upstream.issues(c, u)
+                   and not any(f(c) for f in intentional)]
     assert not regressions, regressions[:10]
 
 
@@ -25,6 +28,8 @@ KNOWN_RESIDUAL = {
     'त्रू॒ꣳ॒', 'जू॒ꣴ॒', 'तू॒ꣳ॒',
     # ङ्कु is a precomposed ligature (glyph570), not base + u-sign. 2 tokens.
     'ङ्कुं॒', 'ङ्कुः॒',
+    # p20 shows र्र with a visible virama; ष's wide anudatta sits close under it. 1 token.
+    'र्र्षं॒',
 }
 
 

@@ -8,6 +8,6 @@ Each patch module defines:
                 True for every text cluster whose rendering this patch may change.
                 tests/test_scope.py fails if any other cluster changes.
 """
-from . import p00_rename, p10_anudatta_below_vowel
+from . import p00_rename, p10_anudatta_below_vowel, p20_conjunct_decompose
 
-PATCHES = [p00_rename, p10_anudatta_below_vowel]
+PATCHES = [p00_rename, p10_anudatta_below_vowel, p20_conjunct_decompose]
