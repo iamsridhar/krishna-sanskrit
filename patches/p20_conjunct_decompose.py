@@ -23,9 +23,11 @@ from krishnatools.geometry import min_gap
 from krishnatools.otl import append_glyph, append_lookup, clone_into_gpos
 
 ID = 'p20'
-SUMMARY = 'Split cramped conjunct ligatures (ddhya, dbhya, dvya, ddya, bja, ktra, kca, cchra, ...) into component glyphs.'
+SUMMARY = ('Split cramped conjunct ligatures into component glyphs (ddhya, dbhya, bja, ktra, kca, '
+           'cchra, ntrya, ...; ddhva, ddhma, ddhra, dghra, drva as da + virama).')
 
 HALF_NA, HALF_BA, HALF_KA, HALF_CA, HALF_NYA = 'glyph219', 'glyph222', 'glyph200', 'glyph205', 'glyph209'
+DA_VIRAMA = 'glyph217'  # द with a visible virama; upstream's द-half form
 YA, JA, CA, TRA, CHRA = 'uni092F', 'uni091C', 'uni091A', 'signavagrahadeva.1', 'ladeva.1'
 STACK_DDHA, STACK_DBHA, STACK_DVA, STACK_DDA = 'upsilontonosgrek', 'kaisymbolgrek', 'sampigrek', 'psigrek'
 YA_STACKS = [STACK_DDHA, STACK_DBHA, STACK_DVA, STACK_DDA]
@@ -48,6 +50,12 @@ DECOMPOSE = {
     'lretroflexhook': ('क्त्र', [HALF_KA, TRA]),
     'hturned': ('क्च', [HALF_KA, CA]),
     'Yicyrl': ('न्त्र्य', [HALF_NA, 'glyph930']),  # glyph930 = upstream त्र्य
+    # द-stacks with a complex lower letter: written द् + rest, like upstream's own द्ध्न.
+    'Upsilonacutehooksymbolgrek': ('द्ध्व', [DA_VIRAMA, 'gangiacopt']),
+    'Kaisymbolgrek': ('द्ध्म', [DA_VIRAMA, 'Horicopt']),
+    'thetasymbolgrek': ('द्ध्र', [DA_VIRAMA, 'vowelsigniideva.1']),
+    'upsilongrek.1': ('द्घ्र', [DA_VIRAMA, 'yadeva.1']),
+    'Sampigrek': ('द्र्व', [DA_VIRAMA, 'uni0935', 'rephaabove']),
     'raisedcolonmod': ('च्छ्र', [HALF_CA, CHRA]),
     'palatalizedhookbelowcomb': ('ञ्छ्र', [HALF_NYA, CHRA]),
     # Below-base ra left over when no rakar ligature applies (र्र्ष, भ्र्रा): show र +
