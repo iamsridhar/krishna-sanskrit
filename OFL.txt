@@ -1,6 +1,8 @@
 Copyright 2026 The Krishna Sanskrit Project Authors (https://sriiyer.com/veda).
 Copyright 2014 Omkarananda Ashram Himalayas, Rishikesh, INDIA (Sanskrit 2003 /
 Sanskrit2020 Devanagari, via Sanskrit2020 by advaita56).
+Glyphs for ddha, ddhya, dbhya, dvya and ddya derived from Shobhika,
+Copyright (c) 2016 IIT Bombay (www.iitb.ac.in).
 Latin glyphs: URW Palladio, Copyright 2014 (URW)++ Design & Development
 (see README.md, "Licensing status").
 

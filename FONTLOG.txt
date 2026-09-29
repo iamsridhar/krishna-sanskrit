@@ -37,6 +37,15 @@ ChangeLog
   XeLaTeX (FakeBold=0.5, Scale=1.1): all fixes render; digit + anudatta also renders
   correctly without the site's \anudattadigit workaround.
 
+- p15: द्ध, द्ध्य, द्भ्य, द्व्य, द्द्य redrawn from Shobhika's outlines (open stack with
+  a compact, joined ya-phala), scaled to Krishna's size, stems thickened toward
+  Krishna's contrast, Krishna's headline. Replaces the earlier stack + full-ya split.
+- p20: द्ध्व, द्ध्म, द्ध्र, द्घ्र, द्र्व written as द् + rest (reviewer choice); क्च and
+  न्त्र्य split into half form + letter.
+- p30: fixed the stretched i-matra for the reph/anusvara-merged forms (the stem was
+  being moved); rules now generalise by width class, covering attested 4-consonant
+  clusters.
+
 Acknowledgements
 ----------------
 N: Omkarananda Ashram Himalayas
@@ -47,3 +56,6 @@ D: Sanskrit2020 (Vedic Extensions, Devanagari Extended, updated positioning)
 
 N: (URW)++ Design & Development
 D: URW Palladio Latin glyphs
+
+N: IIT Bombay (Shobhika)
+D: Outlines for the ddha / ddhya / dbhya / dvya / ddya glyphs

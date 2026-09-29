@@ -16,7 +16,8 @@ from `patches/` in order:
 |---|---|
 | `p00_rename` | Renames to Krishna Sanskrit, keeps upstream copyright, drops the stale DSIG. Renders identically to upstream. |
 | `p10_anudatta_below_vowel` | Hangs anudātta (U+0952) under u/ū/ṛ/ṝ/ḷ/ḹ vowel signs and virama instead of overlapping them. |
-| `p20_conjunct_decompose` | Splits cramped fused conjuncts into upstream component glyphs, following Shobhika's structure: द्ध्य द्भ्य द्व्य द्द्य → stack + य; ब्ज क्त्र च्छ्र ञ्छ्र → half form + letter; leftover below-ra (र्र्ष) → र्. |
+| `p15_shobhika_da_stacks` | Redraws द्ध, द्ध्य, द्भ्य, द्व्य, द्द्य from Shobhika's outlines (open stack, compact joined ya-phala), scaled to Krishna, stems thickened, Krishna's headline. |
+| `p20_conjunct_decompose` | Splits cramped fused conjuncts into upstream component glyphs: ब्ज क्त्र क्च च्छ्र ञ्छ्र न्त्र्य → half form + letter; द्ध्व द्ध्म द्ध्र द्घ्र द्र्व → द् + rest; leftover below-ra (र्र्ष) → र्. |
 | `p30_long_i_matra` | Adds 23 longer i-mātrā (ि) hooks, made by stretching the flat top of the upstream arc (also for the ि+anusvāra/candrabindu/reph forms), and picks one per conjunct so the hook lands on the final consonant as it does on a single consonant. Single consonants keep the upstream ि. |
 
 Each patch declares, via `affects(cluster)`, which text clusters it is allowed to change.
@@ -80,8 +81,7 @@ faux-weight removed). Compare e.g. `/veda/samhita/Kanda_1_Prashna_1.html` on bot
   advaita56. **Do not publish until they reply.**
 - **Latin glyphs** are URW Palladio. Their licence is unconfirmed. Before release, either
   confirm it or replace the Latin with an OFL font (e.g. PT Serif or TeX Gyre Pagella).
-- **Shobhika** (`upstream/Shobhika-Regular.otf`, OFL, © IIT Bombay) is kept as the reference
-  for conjunct redesigns. If any Shobhika outlines are used, add IIT Bombay to `OFL.txt`
-  and to name ID 0.
+- **Shobhika** (`upstream/Shobhika-Regular.otf`, OFL, © IIT Bombay) supplies the outlines for
+  five द-stack glyphs (p15). IIT Bombay's copyright is in `OFL.txt` and name ID 0.
 - Output fonts are OFL-1.1 (`OFL.txt`). They may be bundled and redistributed freely but
   not sold on their own, and must keep all copyright notices.
