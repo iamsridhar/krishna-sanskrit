@@ -1,0 +1,63 @@
+name: Build and test
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build, test, QA (HarfBuzz + XeLaTeX)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install XeLaTeX (for the PDF copy-paste test)
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends texlive-xetex
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Build
+        run: python build.py
+      - name: Test
+        run: python -m pytest -q
+      - name: FontBakery (universal profile, fail on FAIL)
+        run: |
+          python -m venv /tmp/fb && /tmp/fb/bin/pip install -q fontbakery
+          /tmp/fb/bin/fontbakery check-universal build/KrishnaSanskrit-Regular.ttf \
+            --succinct --loglevel WARN --error-code-on FAIL --html fontbakery-report.html
+      - name: Package
+        run: |
+          mkdir -p dist/KrishnaSanskrit
+          cp build/KrishnaSanskrit-Regular.ttf build/KrishnaSanskrit-Regular.woff2 dist/KrishnaSanskrit/
+          cp -r build/web dist/KrishnaSanskrit/web
+          cp OFL.txt FONTLOG.txt README.md dist/KrishnaSanskrit/
+          cd dist && zip -qr KrishnaSanskrit.zip KrishnaSanskrit
+      - uses: actions/upload-artifact@v4
+        with:
+          name: KrishnaSanskrit
+          path: |
+            dist/KrishnaSanskrit.zip
+            fontbakery-report.html
+      - name: Release (tags only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/KrishnaSanskrit.zip
+
+  coretext:
+    name: Safari/CoreText agreement
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: python build.py
+      - run: KRISHNA_ENGINES=1 python -m pytest -q tests/test_engines.py

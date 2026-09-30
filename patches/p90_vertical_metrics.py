@@ -5,9 +5,11 @@ Windows clipping box (usWin 2200/1000) is smaller than the ink of stacked Vedic 
 (the corpus reaches 2367 above and -1176 below), so some Windows apps clip them. This
 patch follows the Google Fonts vertical-metrics guidance:
 
-- line spacing = typo metrics = hhea metrics (upstream's 2200 / -1000 / 51), and the
-  USE_TYPO_METRICS flag (OS/2 v4) so Windows uses the same values as macOS;
-- usWinAscent / usWinDescent cover the font's full bounding box (they only clip).
+- line spacing = typo metrics = hhea metrics: upstream's total (2200 + 1000 + gap 51) with
+  the gap folded into ascender/descender, and the USE_TYPO_METRICS flag (OS/2 v4) so
+  Windows uses the same values as macOS;
+- usWinAscent / usWinDescent cover the font's full bounding box (they only clip);
+- xAvgCharWidth recomputed.
 """
 ID = 'p90'
 SUMMARY = 'Consistent line spacing (USE_TYPO_METRICS, typo = hhea) and a Windows clip box covering all ink.'
@@ -31,10 +33,17 @@ def apply(font):
     os2, hhea = font['OS/2'], font['hhea']
     os2.version = max(os2.version, 4)
     os2.fsSelection |= USE_TYPO_METRICS
-    os2.sTypoAscender, os2.sTypoDescender, os2.sTypoLineGap = hhea.ascent, hhea.descent, hhea.lineGap
+    # Fold the line gap into ascender/descender (same total line height, gap 0), and use
+    # those values for both typo and hhea.
+    gap = hhea.lineGap
+    ascent = hhea.ascent + gap - gap // 2
+    descent = hhea.descent - gap // 2
+    hhea.ascent, hhea.descent, hhea.lineGap = ascent, descent, 0
+    os2.sTypoAscender, os2.sTypoDescender, os2.sTypoLineGap = ascent, descent, 0
     y_min, y_max = font_bbox(font)
     os2.usWinAscent = max(os2.usWinAscent, y_max)
     os2.usWinDescent = max(os2.usWinDescent, -y_min)
+    os2.recalcAvgCharWidth(font)
 
 
 def affects(cluster):

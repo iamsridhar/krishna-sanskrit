@@ -95,8 +95,7 @@ def apply(font):
     copyright_ = names.getDebugName(0)
     if COPYRIGHT_ADDITION not in copyright_:
         names.removeNames(nameID=0)
-        for platform in ((3, 1, 0x409), (1, 0, 0)):
-            names.setName(f'{copyright_} {COPYRIGHT_ADDITION}', 0, *platform)
+        names.setName(f'{copyright_} {COPYRIGHT_ADDITION}', 0, 3, 1, 0x409)
 
 
 def affects(cluster):

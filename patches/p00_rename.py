@@ -42,7 +42,7 @@ def apply(font):
         name.removeNames(nameID=name_id)
     for name_id, value in records.items():
         name.setName(value, name_id, 3, 1, 0x409)
-        name.setName(value, name_id, 1, 0, 0)
+    name.names = [r for r in name.names if r.platformID != 1]  # modern fonts: Windows names only
     font['head'].fontRevision = float(VERSION)
     font['OS/2'].achVendID = 'SRII'
     if 'DSIG' in font:

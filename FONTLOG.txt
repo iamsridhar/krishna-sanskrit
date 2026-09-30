@@ -45,6 +45,13 @@ ChangeLog
 - p30: fixed the stretched i-matra for the reph/anusvara-merged forms (the stem was
   being moved); rules now generalise by width class, covering attested 4-consonant
   clusters.
+- Release engineering: glyphs renamed to Adobe Glyph List names for the text they
+  render and 1,127 upstream PUA cmap entries removed, so text copied out of PDFs is
+  Unicode (it was PUA/garbage with Sanskrit2020); ttfautohint over the whole font;
+  p05 fixes an upstream NULL mark anchor that made OTS reject GPOS; p90 vertical
+  metrics (USE_TYPO_METRICS, no clipping of tall Vedic stacks on Windows); p95
+  composite clean-up; legacy Mac name records dropped. FontBakery universal: 0 FAIL.
+  Devanagari-only WOFF2 web subset + CSS.
 
 Acknowledgements
 ----------------

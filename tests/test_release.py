@@ -35,7 +35,17 @@ def test_vertical_metrics(release):
     os2, hhea, head = tt['OS/2'], tt['hhea'], tt['head']
     assert os2.version >= 4 and os2.fsSelection & (1 << 7), 'USE_TYPO_METRICS'
     assert (os2.sTypoAscender, os2.sTypoDescender, os2.sTypoLineGap) == (hhea.ascent, hhea.descent, hhea.lineGap)
+    assert hhea.lineGap == 0
     assert os2.usWinAscent >= head.yMax and os2.usWinDescent >= -head.yMin, 'Windows would clip ink'
+
+
+@pytest.mark.parametrize('path', ['KrishnaSanskrit-Regular.ttf', 'KrishnaSanskrit-Regular.woff2',
+                                  f'web/{WEB_FILE}'])
+def test_passes_opentype_sanitizer(release_dir, tmp_path, path):
+    """OTS is what browsers run on web fonts; it must accept every file we ship."""
+    ots = pytest.importorskip('ots')
+    result = ots.sanitize(str(release_dir / path), str(tmp_path / 'out'), capture_output=True)
+    assert result.returncode == 0, (result.stdout + result.stderr).decode()[:500]
 
 
 def test_every_glyph_is_hinted(release):
