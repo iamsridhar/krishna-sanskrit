@@ -1,10 +1,17 @@
-Copyright 2026 The Krishna Sanskrit Project Authors (https://sriiyer.com/veda).
-Copyright 2014 Omkarananda Ashram Himalayas, Rishikesh, INDIA (Sanskrit 2003 /
-Sanskrit2020 Devanagari, via Sanskrit2020 by advaita56).
+Copyright 2026 The Krishna Sanskrit Project Authors
+(https://github.com/iamsridhar/krishna-sanskrit).
+
+Devanagari based on Sanskrit2020 by advaita56 and Sanskrit 2003,
+Copyright 2014 Omkarananda Ashram Himalayas, Rishikesh, INDIA.
+
 Glyphs for ddha, ddhya, dbhya, dvya and ddya derived from Shobhika,
 Copyright (c) 2016 IIT Bombay (www.iitb.ac.in).
-Latin glyphs: URW Palladio, Copyright 2014 (URW)++ Design & Development
-(see README.md, "Licensing status").
+
+Latin derived from Gentium,
+Copyright (c) 2003-2025 SIL Global (https://www.sil.org/),
+with Reserved Font Names "Gentium" and "SIL".
+
+No Reserved Font Name is declared for Krishna Sanskrit.
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
 This license is copied below, and is also available with a FAQ at:

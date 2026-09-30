@@ -5,6 +5,14 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 CLUSTERS_TSV = REPO / 'tests' / 'data' / 'clusters.tsv'
+ISO_CLUSTERS_TSV = REPO / 'tests' / 'data' / 'iso_clusters.tsv'
+# A Latin letter (or any non-mark) followed by its combining marks.
+LATIN_CLUSTER = re.compile('[^\u0300-\u036F\u1AB0-\u1AFF\u1DC0-\u1DFF][\u0300-\u036F\u1AB0-\u1AFF\u1DC0-\u1DFF]*')
+
+
+def latin_clusters(text):
+    """Non-ASCII clusters (letter + combining marks) of transliterated text."""
+    return [c for c in LATIN_CLUSTER.findall(text) if not c.isascii()]
 
 C = '[\u0915-\u0939\u0958-\u095F\u0978-\u097F]'
 N = '\u093C?'

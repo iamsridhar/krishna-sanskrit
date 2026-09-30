@@ -46,6 +46,7 @@ class Shaper:
         classes = self.tt['GDEF'].table.GlyphClassDef.classDefs
         self.marks = {g for g, c in classes.items() if c == 3}
         self._bbox = lru_cache(maxsize=None)(self._ink_bbox)
+        self._outline_hashes = {}
 
     def _ink_bbox(self, name):
         pen = BoundsPen(self.glyph_set)
@@ -73,6 +74,18 @@ class Shaper:
     def signature(glyphs):
         """Everything a renderer sees; equal signatures mean identical rendering."""
         return tuple((g.gid, g.x_advance, g.x_offset, g.y_offset) for g in glyphs)
+
+    def outline_signature(self, glyphs):
+        """Like signature(), but by outline instead of glyph ID, so fonts whose glyph
+        order or names differ (subsets, merges, renames) can be compared."""
+        glyf = self.tt['glyf']
+        out = []
+        for g in glyphs:
+            if g.name not in self._outline_hashes:
+                coords, ends, _ = glyf[g.name].getCoordinates(glyf)
+                self._outline_hashes[g.name] = hash((tuple(map(tuple, coords)), tuple(ends)))
+            out.append((self._outline_hashes[g.name], g.x_advance, g.x_offset, g.y_offset))
+        return tuple(out)
 
     def issues(self, text, glyphs=None):
         glyphs = glyphs or self.shape(text)

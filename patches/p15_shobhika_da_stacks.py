@@ -14,23 +14,18 @@ fits them to Sanskrit2020:
 The upstream glyph names are kept, so all GSUB rules still produce them. Mark anchors
 are the upstream glyph's anchors scaled to the new width.
 """
-import hashlib
 import re
-from pathlib import Path
 
 import pathops
 from fontTools.pens.transformPen import TransformPen
 from fontTools.ttLib import TTFont
 
+from krishnatools import upstream
 from krishnatools.outline import rect, to_glyf, union
 
 ID = 'p15'
 SUMMARY = 'Redraw ddha, ddhya, dbhya, dvya, ddya from Shobhika outlines at Krishna size and weight.'
 
-SHOBHIKA = Path(__file__).resolve().parent.parent / 'upstream' / 'Shobhika-Regular.otf'
-SHOBHIKA_SHA256 = 'bde48974337ea665b930d956c26d0b3884f1bc0549769bfb7d82caa3e0af181f'
-COPYRIGHT_ADDITION = ('Glyphs for ddha, ddhya, dbhya, dvya and ddya derived from Shobhika, '
-                      'Copyright (c) 2016 IIT Bombay (www.iitb.ac.in).')
 
 # upstream glyph -> Shobhika source glyph
 REDRAW = {
@@ -49,9 +44,7 @@ _AFFECTS = re.compile('द्ध|द्भ्य|द्व्य|द्द्य
 
 
 def _shobhika():
-    if hashlib.sha256(SHOBHIKA.read_bytes()).hexdigest() != SHOBHIKA_SHA256:
-        raise ValueError(f'{SHOBHIKA} changed; update SHOBHIKA_SHA256 deliberately')
-    return TTFont(SHOBHIKA)
+    return TTFont(upstream.path('Shobhika-Regular.otf'))  # downloaded and hash-verified
 
 
 def fitted_glyph(shobhika, source, glyph_set):
@@ -90,12 +83,6 @@ def apply(font):
         glyf[name] = glyph
         hmtx[name] = (advance, glyph.xMin)
         _scale_anchors(font, name, advance / old_advance)
-
-    names = font['name']
-    copyright_ = names.getDebugName(0)
-    if COPYRIGHT_ADDITION not in copyright_:
-        names.removeNames(nameID=0)
-        names.setName(f'{copyright_} {COPYRIGHT_ADDITION}', 0, 3, 1, 0x409)
 
 
 def affects(cluster):

@@ -1,57 +1,41 @@
 FONTLOG for Krishna Sanskrit
-==========================
+============================
 
 Basic font information
 ----------------------
-Krishna Sanskrit is a Devanagari font for Vedic Sanskrit, derived from Sanskrit2020
-(advaita56, Version 1.30, July 27 2022), which is itself based on Sanskrit 2003 by
-Omkarananda Ashram Himalayas. Licensed under the SIL Open Font License 1.1.
+Krishna Sanskrit is a Devanagari font for Vedic and Sanskrit texts. Its Devanagari is
+derived from Sanskrit2020 (advaita56, Version 1.30, July 27 2022), which is based on
+Sanskrit 2003 by Omkarananda Ashram Himalayas; five द-stack glyphs are derived from
+Shobhika (IIT Bombay); the Latin is derived from Gentium Medium (SIL Global).
+Licensed under the SIL Open Font License 1.1.
 
 ChangeLog
 ---------
-0.100 (unreleased)
-- p00: Renamed from Sanskrit2020 to Krishna Sanskrit. Upstream copyright retained.
-- p10: Anudatta (U+0952) now hangs beneath the u, uu, vocalic r/rr, vocalic l/ll
-  vowel signs and virama instead of overlapping them (about 44,800 occurrences
-  in the Taittiriya corpus). Implemented as a new mark-to-mark lookup with a GDEF
-  mark filtering set, so reph, anusvara and svarita between the two are skipped.
-- p20: Cramped fused conjuncts are split into upstream component glyphs, following
-  Shobhika's structure: ddhya, dbhya, dvya, ddya (and ndddhya, ndvya, bddhya,
-  gddhya, rddhya) as stack + full ya; bja, ktra, cchra, nycchra as half form +
-  letter; a leftover below-base ra (rrsha) as ra + virama. Implemented as a final
-  multiple-substitution lookup, so marks use the components' existing anchors.
-  118 corpus clusters change. Not yet addressed: ddhna (kept as upstream's d + dhna
-  by choice).
-- p30: The i-matra hook now reaches the final consonant of a conjunct. 23 longer
-  variants (120-unit steps) of the i-matra and its anusvara/candrabindu/reph-merged
-  forms are made by stretching the flat top of the upstream arc; anusvara,
-  candrabindu and reph move with the tip. A chained contextual lookup picks the
-  length from the width of the glyphs in front of the final consonant, learned from
-  the corpus plus all generated 2- and 3-consonant clusters. 311 corpus clusters
-  (16,576 tokens) change; every conjunct's hook lands within 90 units of its target.
-  The i-matra before a single consonant is unchanged. Variant glyphs are unhinted.
-- p20/p30 lookups moved to the psts feature so CoreText (which applies features one
-  at a time) runs them after upstream's ligatures, as HarfBuzz does; the i-matra
-  rules gained explicit ZWJ variants because CoreText does not skip ZWJ in contexts.
-  CoreText and HarfBuzz now agree on every corpus cluster Krishna changes. Checked in
-  XeLaTeX (FakeBold=0.5, Scale=1.1): all fixes render; digit + anudatta also renders
-  correctly without the site's \anudattadigit workaround.
-
-- p15: द्ध, द्ध्य, द्भ्य, द्व्य, द्द्य redrawn from Shobhika's outlines (open stack with
-  a compact, joined ya-phala), scaled to Krishna's size, stems thickened toward
-  Krishna's contrast, Krishna's headline. Replaces the earlier stack + full-ya split.
-- p20: द्ध्व, द्ध्म, द्ध्र, द्घ्र, द्र्व written as द् + rest (reviewer choice); क्च and
-  न्त्र्य split into half form + letter.
-- p30: fixed the stretched i-matra for the reph/anusvara-merged forms (the stem was
-  being moved); rules now generalise by width class, covering attested 4-consonant
-  clusters.
-- Release engineering: glyphs renamed to Adobe Glyph List names for the text they
-  render and 1,127 upstream PUA cmap entries removed, so text copied out of PDFs is
-  Unicode (it was PUA/garbage with Sanskrit2020); ttfautohint over the whole font;
-  p05 fixes an upstream NULL mark anchor that made OTS reject GPOS; p90 vertical
-  metrics (USE_TYPO_METRICS, no clipping of tall Vedic stacks on Windows); p95
-  composite clean-up; legacy Mac name records dropped. FontBakery universal: 0 FAIL.
-  Devanagari-only WOFF2 web subset + CSS.
+1.000 (2026-09-30) First release.
+- Vedic accents: anudatta (U+0952) hangs beneath the u, uu, vocalic r/rr, vocalic l/ll
+  vowel signs and virama instead of overlapping them (about 44,800 occurrences in the
+  Taittiriya corpus), via a new mark-to-mark lookup with a GDEF mark filtering set so
+  reph, anusvara and svarita between the two are skipped (p10).
+- Conjuncts: द्ध, द्ध्य, द्भ्य, द्व्य, द्द्य redrawn from Shobhika's outlines (open stack,
+  compact joined ya-phala), fitted to Sanskrit2020's size, stem weight and headline
+  (p15). ब्ज, क्त्र, क्च, च्छ्र, ञ्छ्र, न्त्र्य split into half form + letter; द्ध्व,
+  द्ध्म, द्ध्र, द्घ्र, द्र्व written as द् + rest; a leftover below-base ra (र्र्ष) as
+  र + virama (p20).
+- i-matra: 23 longer hooks, made by stretching the flat top of the upstream arc (also
+  for the anusvara, candrabindu and reph-merged forms), chosen per conjunct so the hook
+  lands on the final consonant as it does on a single consonant; rules generalise by
+  width class to unseen clusters (p30).
+- Latin: Sanskrit2020's URW Palladio Latin (AGPL/GPL, and without the ISO-15919 Vedic
+  combining accents) replaced by Gentium Medium's Latin, IPA, combining marks, Latin
+  Extended A-E and Additional, punctuation and currency, scaled to Sanskrit2020's
+  x-height; below-marks also attach to ꣳ/ꣴ.
+- Renderer robustness: new lookups registered in psts and ZWJ-aware so CoreText matches
+  HarfBuzz on every corpus cluster; upstream's NULL mark anchor fixed so GPOS passes
+  the OpenType Sanitizer (p05); duplicate/nested composite components cleaned (p95).
+- Release engineering: glyphs renamed to Adobe Glyph List names for the text they render
+  and 1,127 upstream PUA cmap entries removed, so text copied out of PDFs is Unicode;
+  ttfautohint over the whole font; USE_TYPO_METRICS with typo = hhea and a Windows clip
+  box covering all ink (p90); Windows-only name records. FontBakery universal: 0 FAIL.
 
 Acknowledgements
 ----------------
@@ -61,8 +45,12 @@ D: Sanskrit 2003 and the Devanagari design this font is based on
 N: advaita56
 D: Sanskrit2020 (Vedic Extensions, Devanagari Extended, updated positioning)
 
-N: (URW)++ Design & Development
-D: URW Palladio Latin glyphs
-
 N: IIT Bombay (Shobhika)
 D: Outlines for the ddha / ddhya / dbhya / dvya / ddya glyphs
+
+N: SIL Global (Gentium)
+D: Latin, combining marks and punctuation
+
+N: The Krishna Sanskrit Project
+W: https://github.com/iamsridhar/krishna-sanskrit
+D: Fixes, testing and release engineering

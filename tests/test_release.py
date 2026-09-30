@@ -1,18 +1,77 @@
-"""The release build: production steps must not change rendering, and must deliver what
-they promise (Unicode glyph names, no PUA, sane vertical metrics, faithful web subset)."""
+"""The release build: the Latin merge and production steps must not change Devanāgarī
+rendering, the Gentium Latin must render the ISO transliteration exactly as Gentium does,
+and the build must deliver what it promises (Unicode glyph names, no PUA, sane vertical
+metrics, sanitizer-clean files, faithful web subsets, Unicode text in PDFs)."""
 import shutil
 import subprocess
+import unicodedata
 
 import pytest
 from fontTools import agl
+from fontTools.ttLib import TTFont
 
+from krishnatools import upstream
+from krishnatools.corpus import ISO_CLUSTERS_TSV, load_clusters
+from krishnatools.latin import latin_scale
 from krishnatools.names import _is_pua, glyph_sequences
-from krishnatools.web import WEB_FILE
+from krishnatools.shaping import Shaper
+from krishnatools.web import CSS_FILE, WOFF2
 
 
-def test_production_steps_render_identically(clusters, krishna, release):
-    diffs = [c for c in clusters if krishna.signature(krishna.shape(c)) != release.signature(release.shape(c))]
+def _transliteration(cluster):
+    """Latin clusters proper: the ISO JSON also holds a few stray Devanagari signs and
+    C1 control codes (mis-encoded quotes) that no font can render meaningfully."""
+    return not cluster[0].isspace() and not any(
+        '\u0900' <= ch <= '\u0DFF' or unicodedata.category(ch) == 'Cc' for ch in cluster)
+
+
+@pytest.fixture(scope='session')
+def iso_clusters():
+    return [c for c in load_clusters(ISO_CLUSTERS_TSV) if _transliteration(c)]
+
+
+def _woff2(path):
+    """HarfBuzz can't read WOFF2; decompress first, as a browser does."""
+    font = TTFont(path)
+    font.flavor = None
+    return Shaper(ttfont=font)
+
+
+def test_devanagari_renders_identically_after_latin_merge_and_production(clusters, krishna, release):
+    diffs = [c for c in clusters
+             if krishna.outline_signature(krishna.shape(c)) != release.outline_signature(release.shape(c))]
     assert not diffs, diffs[:10]
+
+
+def test_iso_transliteration_has_every_glyph(iso_clusters, release):
+    bad = [c for c in iso_clusters if {'missing', 'dotted'} & release.issues(c)]
+    assert not bad, bad[:10]
+
+
+def test_iso_accents_placed_exactly_as_gentium(iso_clusters, release):
+    """Every letter + combining-accent cluster is positioned as Gentium Medium positions it
+    (scaled to Krishna Sanskrit's x-height)."""
+    gentium, k = Shaper(upstream.path('Gentium-Medium.ttf')), latin_scale()
+    in_gentium = set(gentium.tt.getBestCmap())
+    off = []
+    for c in iso_clusters:
+        if not all(ord(ch) in in_gentium for ch in c):
+            continue  # e.g. ꣳ̠: Devanagari-Extended base, see test_accents_centred_on_vedic_anusvara
+        ours, theirs = release.shape(c), gentium.shape(c)
+        if len(ours) != len(theirs) or any(
+                abs(a.x_offset - b.x_offset * k) > 3 or abs(a.y_offset - b.y_offset * k) > 3
+                or abs(a.x_advance - b.x_advance * k) > 3 for a, b in zip(ours, theirs)):
+            off.append(c)
+    assert not off, off[:10]
+
+
+def test_credits_every_source(release):
+    notice = release.tt['name'].getDebugName(0)
+    for holder in ('Krishna Sanskrit Project', 'Omkarananda Ashram Himalayas', 'IIT Bombay', 'SIL Global'):
+        assert holder in notice
+    assert 'URW' not in notice
+    cmap = release.tt.getBestCmap()
+    assert ord('a') in cmap and 0x0320 in cmap and 0x0915 in cmap
 
 
 def test_glyph_names_spell_their_text(release):
@@ -39,8 +98,7 @@ def test_vertical_metrics(release):
     assert os2.usWinAscent >= head.yMax and os2.usWinDescent >= -head.yMin, 'Windows would clip ink'
 
 
-@pytest.mark.parametrize('path', ['KrishnaSanskrit-Regular.ttf', 'KrishnaSanskrit-Regular.woff2',
-                                  f'web/{WEB_FILE}'])
+@pytest.mark.parametrize('path', ['KrishnaSanskrit-Regular.ttf', 'KrishnaSanskrit-Regular.woff2', f'web/{WOFF2}'])
 def test_passes_opentype_sanitizer(release_dir, tmp_path, path):
     """OTS is what browsers run on web fonts; it must accept every file we ship."""
     ots = pytest.importorskip('ots')
@@ -56,25 +114,26 @@ def test_every_glyph_is_hinted(release):
     assert not unhinted, unhinted[:10]
 
 
-def test_web_subset_renders_identically(clusters, release, release_dir):
-    """Compare by glyph name: glyph IDs differ in the subset. HarfBuzz can't read WOFF2,
-    so decompress it first, as a browser does."""
-    from fontTools.ttLib import TTFont
-    from krishnatools.shaping import Shaper
-    woff2 = TTFont(release_dir / 'web' / WEB_FILE)
-    woff2.flavor = None
-    web = Shaper(ttfont=woff2)
-
-    def sig(shaper, c):
-        return tuple((g.name, g.x_advance, g.x_offset, g.y_offset) for g in shaper.shape(c))
-    diffs = [c for c in clusters if sig(release, c) != sig(web, c)]
-    assert not diffs, diffs[:10]
-    assert not any(0x41 <= cp <= 0x7A for cp in web.tt.getBestCmap()), 'Latin letters should be dropped'
+def test_web_package(release_dir):
+    web = release_dir / 'web'
+    assert (web / WOFF2).read_bytes() == (release_dir / WOFF2).read_bytes()
+    css = (web / CSS_FILE).read_text()
+    assert WOFF2 in css and 'unicode-range' in css and "'Krishna Sanskrit'" in css
 
 
-SAMPLE = 'समृ॑द्ध्यै अ॒द्ध्व॒र्युः ब्ज क्त्रि॑ न्ति सु॒ ऋ॒द्धिः'
-# Conjuncts that must survive copy-paste (ि and reph are in visual order in any PDF).
-EXPECTED = ['समृ॑द्ध्यै', 'अ॒द्ध्व॒', 'ब्ज', 'क्त्र', 'सु॒', 'ऋ॒', 'द्ध']
+def test_accents_centred_on_vedic_anusvara(release):
+    """ꣳ̠ / ꣴ̠ (13,000+ in the ISO corpus): the accent hangs centred below the sign."""
+    for text in ('ꣳ̠', 'ꣴ̠', 'saꣳ̠'):
+        base, mark = release.shape(text)[-2:]
+        assert mark.bbox and base.bbox
+        centre = lambda b: (b[0] + b[2]) / 2  # noqa: E731
+        assert abs(centre(mark.bbox) - centre(base.bbox)) < 60, text
+        assert mark.bbox[3] < max(base.bbox[1], 0), text
+
+
+SAMPLE = 'समृ॑द्ध्यै अ॒द्ध्व॒र्युः ब्ज क्त्रि॑ न्ति सु॒ ऋ॒द्धिः — śrēṣṭha̍tamāya̠ r̥̍ṣi̠bhyaḥ'
+# Must survive copy-paste (ि and reph are in visual order in any PDF).
+EXPECTED = ['समृ॑द्ध्यै', 'अ॒द्ध्व॒', 'ब्ज', 'क्त्र', 'सु॒', 'ऋ॒', 'द्ध', 'śrēṣṭha', 'r̥']
 
 
 @pytest.mark.skipif(not shutil.which('xelatex'), reason='needs xelatex')

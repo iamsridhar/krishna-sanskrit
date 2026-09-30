@@ -11,5 +11,8 @@ Each patch module defines:
 from . import (p00_rename, p05_ots_null_anchors, p10_anudatta_below_vowel, p15_shobhika_da_stacks, p20_conjunct_decompose,
                p30_long_i_matra, p90_vertical_metrics, p95_composite_hygiene)
 
+# Devanāgarī patches, applied to Sanskrit2020 before the Latin is replaced.
 PATCHES = [p00_rename, p05_ots_null_anchors, p10_anudatta_below_vowel, p15_shobhika_da_stacks, p20_conjunct_decompose,
-           p30_long_i_matra, p90_vertical_metrics, p95_composite_hygiene]
+           p30_long_i_matra, p95_composite_hygiene]
+# Applied to the finished font, after the Gentium Latin is merged (see build.finish).
+FINAL_PATCHES = [p90_vertical_metrics]

@@ -4,3 +4,8 @@ proofs/
 __pycache__/
 .pytest_cache/
 .DS_Store
+
+# third-party source fonts are downloaded and hash-verified by krishnatools/upstream.py
+upstream/*.otf
+upstream/*.ttf
+upstream/*.zip

@@ -1,45 +1,42 @@
 """Build Krishna Sanskrit from the upstream Sanskrit2020 binary.
 
     python build.py                 # release build -> build/KrishnaSanskrit-Regular.{ttf,woff2}
-                                    #                + build/web/ (Devanagari-only WOFF2 + CSS)
+                                    #                + build/web/ (split WOFF2 subsets + CSS)
     python build.py --upto p00      # stop after a given patch (used by the round-trip test)
     python build.py --out some.ttf  # custom output path (no woff2/web files)
 
-The release build runs every patch, then the production steps:
-  1. production glyph names + no PUA cmap entries (krishnatools.names), so text copied
-     out of PDFs is real Unicode;
-  2. ttfautohint over the whole font, so every glyph is hinted the same way.
-Tests use the patched font *before* these steps (glyph names are the working names);
-tests/test_release.py checks that the production steps change no shaping.
+Source fonts are downloaded from their official releases and verified by SHA-256
+(krishnatools.upstream). The release build then:
+  1. applies every patch in patches/ to Sanskrit2020 (Devanāgarī fixes);
+  2. replaces the bundled URW Latin with Gentium Medium Latin (krishnatools.latin);
+  3. applies the final patches (vertical metrics over the merged font);
+  4. production: glyph names that spell their text + no PUA cmap entries
+     (krishnatools.names), so text copied out of PDFs is Unicode; then ttfautohint.
+Tests use the patched font *before* steps 2-4 (working glyph names); tests/test_release.py
+checks that steps 2-4 change no Devanāgarī rendering and that the Latin works.
 """
 import argparse
-import hashlib
 import io
 from pathlib import Path
 
 import ttfautohint
 from fontTools.ttLib import TTFont
 
+from krishnatools import upstream
+from krishnatools.latin import compose
 from krishnatools.names import rename
 from krishnatools.web import write_web_package
-from patches import PATCHES
+from patches import FINAL_PATCHES, PATCHES
 
 REPO = Path(__file__).resolve().parent
-UPSTREAM = REPO / 'upstream' / 'Sanskrit2020U.otf'
-UPSTREAM_SHA256 = 'dfaf4ed323c7a42d5c4bf3f62182e5db5a99f1472ab137cb3f53a05d3c2e1bd9'
+UPSTREAM = upstream.UPSTREAM_DIR / 'Sanskrit2020U.otf'
 DEFAULT_OUT = REPO / 'build' / 'KrishnaSanskrit-Regular.ttf'
 
 
-def check_upstream():
-    digest = hashlib.sha256(UPSTREAM.read_bytes()).hexdigest()
-    if digest != UPSTREAM_SHA256:
-        raise SystemExit(f'{UPSTREAM} changed (sha256 {digest}); update UPSTREAM_SHA256 deliberately.')
-
-
 def patched(upto=None):
-    """Upstream with patches applied (working glyph names). Returns (TTFont, applied ids)."""
-    check_upstream()
-    font = TTFont(UPSTREAM)
+    """Sanskrit2020 with the Devanāgarī patches applied (working glyph names).
+    Returns (TTFont, applied ids)."""
+    font = TTFont(upstream.path('Sanskrit2020U.otf'))
     applied = []
     for patch in PATCHES:
         patch.apply(font)
@@ -50,6 +47,14 @@ def patched(upto=None):
         if upto:
             raise SystemExit(f'Unknown patch id {upto!r}')
     return font, applied
+
+
+def finish(font):
+    """Gentium Latin merged in, then the final patches. Returns a new TTFont."""
+    font = compose(font)
+    for patch in FINAL_PATCHES:
+        patch.apply(font)
+    return font
 
 
 def production(font):
@@ -66,7 +71,8 @@ def build(out=DEFAULT_OUT, upto=None, woff2=True, release=True):
     """Write a font. `release` (full builds only) adds the production steps."""
     font, applied = patched(upto)
     if release and upto is None:
-        font = production(font)
+        font = production(finish(font))
+        applied += ['latin'] + [p.ID for p in FINAL_PATCHES]
     out = Path(out)
     out.parent.mkdir(parents=True, exist_ok=True)
     font.save(out)

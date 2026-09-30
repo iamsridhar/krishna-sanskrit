@@ -8,6 +8,7 @@ Unicode sequence it renders (`uni0926094D0927094D092F`), derived from the cmap a
 GSUB rules that produce it.
 """
 import io
+import re
 
 from fontTools import agl
 from fontTools.ttLib import TTFont
@@ -101,8 +102,12 @@ def _agl_name(text):
     return '_'.join(f'uni{ord(c):04X}' if ord(c) <= 0xFFFF else f'u{ord(c):05X}' for c in text)
 
 
+_VALID_NAME = re.compile(r'[A-Za-z_.][A-Za-z0-9_.]{0,62}')
+
+
 def production_names(font):
-    """Old name -> new name for every glyph whose name doesn't already decode correctly."""
+    """Old name -> new name for every glyph whose name doesn't already decode correctly
+    (or isn't a valid post-table name, e.g. `.notdef#1` from merging fonts)."""
     seq = glyph_sequences(font)
     order = font.getGlyphOrder()
     taken, mapping = set(order), {}
@@ -111,12 +116,16 @@ def production_names(font):
             continue
         base, dot, suffix = name.partition('.')
         text = seq.get(name) or seq.get(base)
-        if text and agl.toUnicode(name) == text:
+        valid = bool(_VALID_NAME.fullmatch(name))
+        if valid and text and agl.toUnicode(name) == text:
             continue
+        suffix_ok = bool(dot and _VALID_NAME.fullmatch('.' + suffix))
         if text:
-            new = _agl_name(text) + (dot + suffix if dot else '')
-        elif agl.toUnicode(name):
-            new = f'_g{gid}'  # unreachable glyph whose name would decode to something wrong
+            new = _agl_name(text) + ('.' + suffix if suffix_ok else '')
+            if not _VALID_NAME.fullmatch(new):
+                new = f'_g{gid}'  # sequence too long for a 63-character name
+        elif agl.toUnicode(name) or not valid:
+            new = f'_g{gid}'  # unreachable glyph whose name would decode wrongly, or invalid
         else:
             continue
         candidate, n = new, 1

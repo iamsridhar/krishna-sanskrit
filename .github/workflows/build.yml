@@ -18,7 +18,7 @@ jobs:
           python-version: '3.12'
           cache: pip
       - name: Install XeLaTeX (for the PDF copy-paste test)
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends texlive-xetex
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends texlive-xetex texlive-latex-recommended fonts-lmodern
       - name: Install dependencies
         run: pip install -r requirements.txt
       - name: Build

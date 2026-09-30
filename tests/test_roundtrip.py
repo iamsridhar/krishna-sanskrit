@@ -18,7 +18,8 @@ def test_names(renamed):
     assert names.getDebugName(1) == 'Krishna Sanskrit'
     assert names.getDebugName(6) == 'KrishnaSanskrit-Regular'
     assert 'Omkarananda Ashram Himalayas' in names.getDebugName(0)
-    assert 'URW' in names.getDebugName(0)
+    assert 'IIT Bombay' in names.getDebugName(0)
+    assert 'URW' not in names.getDebugName(0), 'no URW glyphs ship in Krishna Sanskrit'
     assert 'Sanskrit2020' in names.getDebugName(10)
     assert 'Open Font License' in names.getDebugName(13)
     assert not any('Sanskrit 2020' in (r.toUnicode()) for r in names.names if r.nameID in (1, 4, 6, 16))
