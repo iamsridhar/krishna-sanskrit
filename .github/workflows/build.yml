@@ -7,10 +7,15 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Build, test, QA (HarfBuzz + XeLaTeX)
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # publish the GitHub Release on v* tags
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
