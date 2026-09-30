@@ -29,8 +29,21 @@ def renamed(tmp_path_factory):
 
 @pytest.fixture(scope='session')
 def krishna(tmp_path_factory):
-    out, _ = build.build(tmp_path_factory.mktemp('full') / 'KrishnaSanskrit-Regular.ttf', woff2=False)
+    """All patches, working glyph names (before the release/production steps)."""
+    out, _ = build.build(tmp_path_factory.mktemp('full') / 'KrishnaSanskrit-Regular.ttf', woff2=False, release=False)
     return Shaper(out)
+
+
+@pytest.fixture(scope='session')
+def release_dir(tmp_path_factory):
+    """Full release build: production names, no PUA, ttfautohint, WOFF2, web subset."""
+    out, _ = build.build(tmp_path_factory.mktemp('release') / 'KrishnaSanskrit-Regular.ttf')
+    return out.parent
+
+
+@pytest.fixture(scope='session')
+def release(release_dir):
+    return Shaper(release_dir / 'KrishnaSanskrit-Regular.ttf')
 
 
 @pytest.fixture(scope='session')

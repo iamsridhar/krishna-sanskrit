@@ -2,6 +2,7 @@
 
 ID = 'p00'
 SUMMARY = 'Rename Sanskrit2020 to Krishna Sanskrit; keep upstream copyright; drop stale DSIG.'
+CHANGES_RENDERING = False
 
 FAMILY = 'Krishna Sanskrit'
 STYLE = 'Regular'
