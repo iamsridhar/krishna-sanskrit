@@ -11,6 +11,15 @@ Licensed under the SIL Open Font License 1.1.
 
 ChangeLog
 ---------
+1.001 (2026-10-09)
+- Anunasika before y, v, l (य्ँय, व्ँव, ल्ँल; 3,341 occurrences in the Taittiriya texts):
+  shown as the joined conjunct (य्य, व्व, ल्ल) with the candrabindu over its first part,
+  instead of a visible virama, the candrabindu and the full letter. The text is unchanged,
+  so search and copy-paste still give व्ँव. Includes the i-matra forms (व्ँवि uses the
+  i-matra of व्वि). When a further conjunct follows (व्ँव्या) the rendering is unchanged.
+  The two consonants are in different syllables, so this uses a new 'rlig' lookup;
+  HarfBuzz and CoreText give identical results (p40, tests/test_anunasika.py).
+
 1.000 (2026-09-30) First release.
 - Vedic accents: anudatta (U+0952) hangs beneath the u, uu, vocalic r/rr, vocalic l/ll
   vowel signs and virama instead of overlapping them (about 44,800 occurrences in the
