@@ -11,6 +11,12 @@ Licensed under the SIL Open Font License 1.1.
 
 ChangeLog
 ---------
+1.002 (2026-10-09)
+- Anunasika with i-matra (व्ँवि; 1,326 occurrences in the Taittiriya texts): the
+  candrabindu sat on the headline under the long i-matra arc and touched it. It is now
+  lifted so its bottom sits at the top of the arc, still over the first part of the
+  conjunct; the svarita stays clear of it. Forms without i-matra are unchanged (p40).
+
 1.001 (2026-10-09)
 - Anunasika before y, v, l (य्ँय, व्ँव, ल्ँल; 3,341 occurrences in the Taittiriya texts):
   shown as the joined conjunct (य्य, व्व, ल्ल) with the candrabindu over its first part,

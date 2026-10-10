@@ -29,7 +29,7 @@ def _names(shaper, text):
 @pytest.mark.parametrize('word', WORDS)
 def test_joined_conjunct_without_visible_virama(krishna, word):
     names = _names(krishna, word)
-    assert any(n.endswith('.cb') for n in names), names
+    assert any('.cb' in n for n in names), names
     assert krishna.virama not in [g.gid for g in krishna.shape(word)], names
     assert 'uni0901' not in names, names  # the candrabindu is drawn inside the conjunct glyph
 
@@ -41,9 +41,27 @@ def test_i_matra_matches_plain_conjunct(krishna, word):
     assert _names(krishna, word)[0] == _names(krishna, plain)[0]
 
 
+@pytest.mark.parametrize('word', ['व्ँवि', 'य्ँयि', 'ल्ँलि', 'व्ँविं', 'व्ँवि॑'])
+def test_i_matra_candrabindu_clears_the_arc(krishna, word):
+    """With ि the candrabindu is lifted so it sits above the i-matra arc, not inside it."""
+    glyf = krishna.tt['glyf']
+    imatra, conj = _names(krishna, word)[:2]
+    assert conj.endswith('.cb.i'), conj
+    for n in (imatra, conj, 'uni0901'):
+        glyf[n].recalcBounds(glyf)
+    cb_height = glyf['uni0901'].yMax - glyf['uni0901'].yMin
+    arc_top = glyf[_names(krishna, word.replace('ं', ''))[0]].yMax
+    assert glyf[conj].yMax - cb_height >= arc_top - 1
+
+
+@pytest.mark.parametrize('word', ['र॒जव॒व्ँवा', 'व्ँवी', 'व्ँवै'])
+def test_candrabindu_at_headline_without_i_matra(krishna, word):
+    assert any(n.endswith('.cb') for n in _names(krishna, word))
+
+
 @pytest.mark.parametrize('word', UNTOUCHED)
 def test_further_conjuncts_untouched(upstream, krishna, word):
-    assert not any(n.endswith('.cb') for n in _names(krishna, word))
+    assert not any('.cb' in n for n in _names(krishna, word))
 
 
 @pytest.mark.skipif(sys.platform != 'darwin' or not shutil.which('swiftc') or not os.environ.get('KRISHNA_ENGINES'),

@@ -13,7 +13,9 @@ part, keeping the text unchanged (search, copy-paste and corrections still see �
 2. A ligature (C, virama, candrabindu, C) -> that glyph.
 3. With an i-matra the shaper has already moved ि in front of the second consonant
    (C ् ँ ि C), so: the first C becomes the i-matra the font uses for the plain conjunct
-   (C्Cि, via p30), and (् ँ ि C) becomes the conjunct glyph.
+   (C्Cि, via p30), and (् ँ ि C) becomes a second composite (conjunct.cb.i) whose
+   candrabindu is lifted so its bottom sits at the top of that i-matra's arc — at
+   headline height it would sit inside the arc (व्ँवि).
 
 The two consonants are in different syllables, so the lookups go in 'rlig', a global
 feature HarfBuzz applies across syllable boundaries (the presentation features are
@@ -113,37 +115,43 @@ def apply(font):
     shape = _Shaper(font)
     glyf, hmtx = font['glyf'], font['hmtx']
     gsub = font['GSUB'].table
-    plan = []  # (consonant glyph, conjunct.cb glyph, {short i-matra: long i-matra})
+    plan = []  # (consonant glyph, conjunct.cb glyph, conjunct.cb.i glyph, {short i-matra: long i-matra})
     for letter, cons in CONSONANTS.items():
         (conjunct, _), = shape(letter + '्' + letter)          # upstream ligature, e.g. व्व
         half = shape(letter + '्\u200d')[0][0]                 # half form
         cb_offset = shape(letter + 'ँ')[1][1]                  # candrabindu offset on the full letter
-        name = conjunct + '.cb'
-        g = Glyph()
-        g.numberOfContours = -1
-        g.components = []
-        for comp_name, x in ((conjunct, 0), (CANDRABINDU, hmtx[half][0] + cb_offset)):
-            c = GlyphComponent()
-            c.glyphName, c.x, c.y, c.flags = comp_name, x, 0, 0x4  # ROUND_XY_TO_GRID
-            g.components.append(c)
-        append_glyph(font, name, g, hmtx[conjunct][0], conjunct)
-        glyf[name].recalcBounds(glyf)
-        clone_into_gpos(font, conjunct, name)
         imatra = {}
         for mark in I_MARKS:
             short = shape(letter + 'ि' + mark)[0][0]
             long_ = shape(letter + '्' + letter + 'ि' + mark)[0][0]
             imatra[short] = long_
-        plan.append((cons, name, imatra))
+        arc = imatra[shape(letter + 'ि')[0][0]]
+        glyf[arc].recalcBounds(glyf)
+        glyf[CANDRABINDU].recalcBounds(glyf)
+        lift = glyf[arc].yMax - glyf[CANDRABINDU].yMin
+        names = []
+        for name, dy in ((conjunct + '.cb', 0), (conjunct + '.cb.i', lift)):
+            g = Glyph()
+            g.numberOfContours = -1
+            g.components = []
+            for comp_name, x, y in ((conjunct, 0, 0), (CANDRABINDU, hmtx[half][0] + cb_offset, dy)):
+                c = GlyphComponent()
+                c.glyphName, c.x, c.y, c.flags = comp_name, x, y, 0x4  # ROUND_XY_TO_GRID
+                g.components.append(c)
+            append_glyph(font, name, g, hmtx[conjunct][0], conjunct)
+            glyf[name].recalcBounds(glyf)
+            clone_into_gpos(font, conjunct, name)
+            names.append(name)
+        plan.append((cons, names[0], names[1], imatra))
 
     # 1. C ् ँ C -> conjunct.cb
     append_lookup(gsub, _lookup(4, [buildLigatureSubstSubtable(
-        {(cons, VIRAMA, CANDRABINDU, cons): name for cons, name, _ in plan})]))
+        {(cons, VIRAMA, CANDRABINDU, cons): name for cons, name, _, _ in plan})]))
     _register(gsub, gsub.LookupList.LookupCount - 1)
 
     # 2. (i-matra case) first C -> the conjunct's i-matra, when followed by ् ँ ि C
     nested_i = []
-    for cons, _, imatra in plan:
+    for cons, _, _, imatra in plan:
         for short, long_ in imatra.items():
             append_lookup(gsub, _lookup(1, [buildSingleSubstSubtable({cons: long_})]))
             nested_i.append((cons, short, gsub.LookupList.LookupCount - 1))
@@ -152,16 +160,16 @@ def apply(font):
     append_lookup(gsub, _lookup(6, chain_i))
     _register(gsub, gsub.LookupList.LookupCount - 1)
 
-    # 3. (i-matra case) ् ँ ि C -> conjunct.cb, after that i-matra
+    # 3. (i-matra case) ् ँ ि C -> conjunct.cb.i, after that i-matra
     ligatures = {}
-    for cons, name, imatra in plan:
+    for cons, _, name_i, imatra in plan:
         for short in imatra:
-            ligatures[(VIRAMA, CANDRABINDU, short, cons)] = name
+            ligatures[(VIRAMA, CANDRABINDU, short, cons)] = name_i
     append_lookup(gsub, _lookup(4, [buildLigatureSubstSubtable(ligatures)]))
     nested_lig = gsub.LookupList.LookupCount - 1
     chain_l = [_chain(font, [sorted(set(imatra.values()))], [[VIRAMA], [CANDRABINDU], sorted(imatra), [cons]], [],
                       nested_lig)
-               for cons, _, imatra in plan]
+               for cons, _, _, imatra in plan]
     append_lookup(gsub, _lookup(6, chain_l))
     _register(gsub, gsub.LookupList.LookupCount - 1)
 

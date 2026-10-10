@@ -118,7 +118,7 @@ official releases (pinned by SHA-256, see [upstream/README.md](upstream/README.m
 | `p15_shobhika_da_stacks` | Redraws द्ध, द्ध्य, द्भ्य, द्व्य, द्द्य from Shobhika's outlines (open stack, compact joined ya-phala), fitted to Sanskrit2020's size, weight and headline. |
 | `p20_conjunct_decompose` | Splits cramped fused conjuncts into upstream component glyphs: ब्ज क्त्र क्च च्छ्र ञ्छ्र न्त्र्य → half form + letter; द्ध्व द्ध्म द्ध्र द्घ्र द्र्व → द् + rest; leftover below-ra (र्र्ष) → र्. |
 | `p30_long_i_matra` | 23 longer i-mātrā hooks (also for the ि + anusvāra/candrabindu/reph forms), chosen per conjunct so the hook lands on the final consonant. Single consonants keep the upstream ि. |
-| `p40_anunasika_conjunct` | य्ँय, व्ँव, ल्ँल (anunāsika before y/v/l) as the joined conjunct with the candrabindu over its first part, including the i-mātrā forms. Spans two syllables, so it uses `rlig`; covered by `tests/test_anunasika.py` rather than the per-cluster tests. |
+| `p40_anunasika_conjunct` | य्ँय, व्ँव, ल्ँल (anunāsika before y/v/l) as the joined conjunct with the candrabindu over its first part; with ि the candrabindu is lifted above the i-mātrā arc. Spans two syllables, so it uses `rlig`; covered by `tests/test_anunasika.py` rather than the per-cluster tests. |
 | `p95_composite_hygiene` | Removes a duplicate component (U+0957) and flattens a nested composite (U+0977). No visual change. |
 | `p90_vertical_metrics` (final) | USE_TYPO_METRICS, typo = hhea with the line gap folded in (same line height), usWin covering the full bounding box. |
 
