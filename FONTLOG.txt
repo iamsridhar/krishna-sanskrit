@@ -11,6 +11,10 @@ Licensed under the SIL Open Font License 1.1.
 
 ChangeLog
 ---------
+1.003 (2026-10-10)
+- न्त्र (about 1,850 occurrences in the Taittiriya texts) is written as half न followed by
+  त्र, like न्त्र्य already was, instead of upstream's fused glyph (p20).
+
 1.002 (2026-10-09)
 - Anunasika with i-matra (व्ँवि; 1,326 occurrences in the Taittiriya texts): the
   candrabindu sat on the headline under the long i-matra arc and touched it. It is now

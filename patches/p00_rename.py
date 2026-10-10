@@ -11,7 +11,7 @@ CHANGES_RENDERING = False
 
 FAMILY = 'Krishna Sanskrit'
 STYLE = 'Regular'
-VERSION = '1.002'
+VERSION = '1.003'
 POSTSCRIPT = 'KrishnaSanskrit-Regular'
 PROJECT_URL = 'https://github.com/iamsridhar/krishna-sanskrit'
 UPSTREAM_COPYRIGHT_PREFIX = 'Copyright 2014 Omkarananda Ashram Himalayas, Rishikesh, INDIA'

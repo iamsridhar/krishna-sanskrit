@@ -15,7 +15,7 @@ from fontTools.ttLib.tables import otTables as ot
 from krishnatools.otl import append_lookup
 
 ID = 'p20'
-SUMMARY = ('Split cramped conjunct ligatures into component glyphs (bja, ktra, kca, cchra, ntrya, '
+SUMMARY = ('Split cramped conjunct ligatures into component glyphs (bja, ktra, kca, cchra, ntra, ntrya, '
            '...; ddhva, ddhma, ddhra, dghra, drva as da + virama).')
 
 HALF_NA, HALF_BA, HALF_KA, HALF_CA, HALF_NYA = 'glyph219', 'glyph222', 'glyph200', 'glyph205', 'glyph209'
@@ -32,6 +32,7 @@ DECOMPOSE = {
     'lretroflexhook': ('क्त्र', [HALF_KA, TRA]),
     'hturned': ('क्च', [HALF_KA, CA]),
     'Yicyrl': ('न्त्र्य', [HALF_NA, 'glyph930']),  # glyph930 = upstream त्र्य
+    'Ibyelorussianukrainiancyrl': ('न्त्र', [HALF_NA, TRA]),
     # द-stacks with a complex lower letter: written द् + rest, like upstream's own द्ध्न.
     'Upsilonacutehooksymbolgrek': ('द्ध्व', [DA_VIRAMA, 'gangiacopt']),
     'Kaisymbolgrek': ('द्ध्म', [DA_VIRAMA, 'Horicopt']),
