@@ -11,6 +11,11 @@ Licensed under the SIL Open Font License 1.1.
 
 ChangeLog
 ---------
+1.004 (2026-10-11)
+- प्र (about 9,300 occurrences in the Taittiriya texts): the slanted ra-stroke is about a
+  third longer and reaches below the bowl, so it no longer reads as a stub. Outline only:
+  same glyph, advance and mark attachment; प्र्य unchanged (p25).
+
 1.003 (2026-10-10)
 - न्त्र (about 1,850 occurrences in the Taittiriya texts) is written as half न followed by
   त्र, like न्त्र्य already was, instead of upstream's fused glyph (p20).
